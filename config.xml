@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<module>
+	<name>shoplync_customer_survey</name>
+	<displayName><![CDATA[Customer Survey]]></displayName>
+	<version><![CDATA[1.0.0]]></version>
+	<description><![CDATA[Allows administrators to send out survey\'s to their customers and determine the businesses rating. Allows to redirect users to Google reviews/FB if they enter above the admin specified threshold]]></description>
+	<author><![CDATA[Shoplync]]></author>
+	<tab><![CDATA[advertising_marketing]]></tab>
+	<is_configurable>1</is_configurable>
+	<need_instance>1</need_instance>
+</module>
