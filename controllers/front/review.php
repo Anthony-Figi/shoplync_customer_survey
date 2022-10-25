@@ -110,8 +110,10 @@ class shoplync_customer_surveyreviewModuleFrontController extends ModuleFrontCon
                     Shoplync_customer_survey::SetUserRating($sms_id, $user_email, $user_rating);
                     if($user_rating >= 4)
                     {
-                        $subtitle_str = 'We\'d love it if you took a minute to post an online review.';
-                        $google_review_link = Configuration::get('SHOPLYNC_CUSTOMER_SURVEY_G_REVIEW', 'https://g.page/r/CRJqo8GHP_6lEB0/review');
+                        $subtitle_str = Configuration::get('SHOPLYNC_CUSTOMER_SURVEY_SUBTITLE_1', 
+                        'We\'d love it if you took a minute to post an online review.');
+                        
+                        $google_review_link = Configuration::get('SHOPLYNC_CUSTOMER_SURVEY_G_REVIEW', '');
                         $facebook_review_link = Configuration::get('SHOPLYNC_CUSTOMER_SURVEY_FB_REVIEW', '');
                         if(strlen($google_review_link) > 0)
                         {
@@ -126,14 +128,16 @@ class shoplync_customer_surveyreviewModuleFrontController extends ModuleFrontCon
                     else
                     {
                         $top_icon = '&#xE0b7;';
-                        $subtitle_str = 'We appreciate your feedback, please let us know how we can improve.';
+                        $subtitle_str = Configuration::get('SHOPLYNC_CUSTOMER_SURVEY_SUBTITLE_2', 
+                        'We appreciate your feedback, please let us know how we can improve.');
                         $this->context->smarty->assign('review_box', true);
                     }
                 }
                 else
                 {
                     $title_str = 'We\'ve already received your feedback - thank you!';
-                    $subtitle_str = 'Please contact us if you have additional feedback or comments to share with us.';
+                    $subtitle_str = Configuration::get('SHOPLYNC_CUSTOMER_SURVEY_SUBTITLE_3', 
+                    'Please contact us if you have additional feedback or comments to share with us.');
                 }
                 $this->context->smarty->assign('title_str', $title_str);
                 $this->context->smarty->assign('subtitle_str', $subtitle_str);

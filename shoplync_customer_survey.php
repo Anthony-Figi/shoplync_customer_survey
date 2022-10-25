@@ -110,6 +110,9 @@ class Shoplync_customer_survey extends Module
         Configuration::updateValue('SHOPLYNC_CUSTOMER_THRESHOLD', 2);
         Configuration::updateValue('SHOPLYNC_CUSTOMER_SURVEY_G_REVIEW', '');
         Configuration::updateValue('SHOPLYNC_CUSTOMER_SURVEY_FB_REVIEW', '');
+        Configuration::updateValue('SHOPLYNC_CUSTOMER_SURVEY_SUBTITLE_1', 'We\'d love it if you left us a positive review.');
+        Configuration::updateValue('SHOPLYNC_CUSTOMER_SURVEY_SUBTITLE_2', 'We appreciate your feedback, please let us know how we can improve.');
+        Configuration::updateValue('SHOPLYNC_CUSTOMER_SURVEY_SUBTITLE_3', 'Please contact us if you have additional feedback or comments to share with us.');
 
         include(dirname(__FILE__).'/sql/install.php');
 
@@ -136,6 +139,9 @@ class Shoplync_customer_survey extends Module
         Configuration::deleteByName('SHOPLYNC_CUSTOMER_THRESHOLD');
         Configuration::deleteByName('SHOPLYNC_CUSTOMER_SURVEY_G_REVIEW');
         Configuration::deleteByName('SHOPLYNC_CUSTOMER_SURVEY_FB_REVIEW');
+        Configuration::deleteByName('SHOPLYNC_CUSTOMER_SURVEY_SUBTITLE_1');
+        Configuration::deleteByName('SHOPLYNC_CUSTOMER_SURVEY_SUBTITLE_2');
+        Configuration::deleteByName('SHOPLYNC_CUSTOMER_SURVEY_SUBTITLE_3');
 
         return parent::uninstall();
     }
@@ -219,7 +225,8 @@ class Shoplync_customer_survey extends Module
             
             if(!empty($customers) && is_array($customers))
             {
-                $sqlSetRatingQuery = 'UPDATE `' . _DB_PREFIX_.'shoplync_customer_survey` SET rating = '.pSQL(htmlentities($user_rating))
+                //error_log('return: '.print_r($customers, true));
+                $sqlSetRatingQuery = 'UPDATE `' . _DB_PREFIX_.'shoplync_customer_survey` SET rating = '.$user_rating
                     .', rating_recieved = CURRENT_TIMESTAMP'
                     .' WHERE customer_survey_id = '.$customers[0]['customer_survey_id'];
                     
@@ -238,7 +245,8 @@ class Shoplync_customer_survey extends Module
             
             if(!empty($customers) && is_array($customers))
             {
-                $sqlSetRatingQuery = 'UPDATE `' . _DB_PREFIX_.'shoplync_customer_survey` SET feedback = "'.$user_feedback.'" '
+                //error_log('return: '.print_r($customers, true));
+                $sqlSetRatingQuery = 'UPDATE `' . _DB_PREFIX_.'shoplync_customer_survey` SET feedback = "'.pSQL(htmlentities($user_feedback)).'" '
                     .' WHERE customer_survey_id = '.$customers[0]['customer_survey_id'];
                     
                 return Db::getInstance()->execute($sqlSetRatingQuery);
@@ -377,6 +385,27 @@ class Shoplync_customer_survey extends Module
                         'name' => 'SHOPLYNC_CUSTOMER_SURVEY_FB_REVIEW',
                         'label' => 'Facebook Review Link',
                     ),
+                    array(
+                        'type' => 'text',
+                        'prefix' => '<i class="icon icon-comment"></i>',
+                        'desc' => 'The prompt message displayed to the user when a user gives a high rating',
+                        'name' => 'SHOPLYNC_CUSTOMER_SURVEY_SUBTITLE_1',
+                        'label' => 'High User Rating Message',
+                    ),
+                    array(
+                        'type' => 'text',
+                        'prefix' => '<i class="icon icon-comment"></i>',
+                        'desc' => 'The prompt message displayed to the user when a user gives a low rating',
+                        'name' => 'SHOPLYNC_CUSTOMER_SURVEY_SUBTITLE_2',
+                        'label' => 'Low User Rating Message',
+                    ),
+                    array(
+                        'type' => 'text',
+                        'prefix' => '<i class="icon icon-copy"></i>',
+                        'desc' => 'The prompt message displayed to the user when trying to submit a second rating',
+                        'name' => 'SHOPLYNC_CUSTOMER_SURVEY_SUBTITLE_3',
+                        'label' => 'Already Recieved Rating Message',
+                    ),
                 ),
                 'submit' => array(
                     'title' => $this->l('Save'),
@@ -397,6 +426,9 @@ class Shoplync_customer_survey extends Module
             'SHOPLYNC_CUSTOMER_THRESHOLD' => Configuration::get('SHOPLYNC_CUSTOMER_THRESHOLD', 2),
             'SHOPLYNC_CUSTOMER_SURVEY_G_REVIEW' => Configuration::get('SHOPLYNC_CUSTOMER_SURVEY_G_REVIEW', ''),
             'SHOPLYNC_CUSTOMER_SURVEY_FB_REVIEW' => Configuration::get('SHOPLYNC_CUSTOMER_SURVEY_FB_REVIEW', ''),
+            'SHOPLYNC_CUSTOMER_SURVEY_SUBTITLE_1' => Configuration::get('SHOPLYNC_CUSTOMER_SURVEY_SUBTITLE_1', 'We\'d love it if you left us a positive review.'),
+            'SHOPLYNC_CUSTOMER_SURVEY_SUBTITLE_2' => Configuration::get('SHOPLYNC_CUSTOMER_SURVEY_SUBTITLE_2', 'We appreciate your feedback, please let us know how we can improve.'),
+            'SHOPLYNC_CUSTOMER_SURVEY_SUBTITLE_3' => Configuration::get('SHOPLYNC_CUSTOMER_SURVEY_SUBTITLE_3', 'Please contact us if you have additional feedback or comments to share with us.'),
         );
     }
 
@@ -413,12 +445,6 @@ class Shoplync_customer_survey extends Module
                 Configuration::updateValue($key, Tools::getValue($key));
             }
         }
-        self::SendSurveyMail('AnthoTesty', 'anthony@baysideperformance.com', array(
-            '{firstname}' => 'AnthoTesty',
-            '{lastname}' => '',
-            '{rating_url}' => 'staging.baysideperformance.ca'.'/review/?sms-id='.'68621'.'&email='.'anthony@baysideperformance.com',
-            '{customer_shop_url}' => 'www.baysideperformance.ca',
-        ));
         //process other  values
         //process tempelate file, if new one uploaded use that instead
         //process sms pro file?

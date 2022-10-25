@@ -56,7 +56,7 @@ class WebserviceSpecificManagementCustomerEmailUpload implements WebserviceSpeci
      */
     protected $maximumSize = 3000000;
 
-
+    protected $is_test_email = false;
     /**
      * @param WebserviceOutputBuilder $obj
      *
@@ -114,6 +114,17 @@ class WebserviceSpecificManagementCustomerEmailUpload implements WebserviceSpeci
             switch($this->getWsObject()->urlSegment[1])
             {
                 case 'customers':
+                    $this->processPostedFile();
+                    break;
+                case 'test':
+                    error_log('Test Email');
+                    $this->is_test_email = true;
+                    $this->processPostedFile();
+                    break;
+                case 'feedback'://spew list of feedback from customers
+                    $this->processPostedFile();
+                    break;
+                case 'rating'://spew avg list or each rating
                     $this->processPostedFile();
                     break;
                 default:
@@ -241,7 +252,47 @@ class WebserviceSpecificManagementCustomerEmailUpload implements WebserviceSpeci
         }
         return true;
     }
-    
+    protected static function UpdateTestEmail($sms_cust_id = '1234', $email_addr = '')
+    {
+        $smsCustID = strlen($sms_cust_id) > 0 ? $sms_cust_id : '1234';
+        $emailAddr = strlen($email_addr) > 0 ? $email_addr : '';
+        
+        //check is email exists, if yes delete if not sms-id 1234
+        $existingEmailSQL = 'SELECT * FROM ' . _DB_PREFIX_ . 'shoplync_customer_survey WHERE email_address LIKE "'.$emailAddr.'" AND sms_customer_id != '.$sms_cust_id;
+        $existingEmails = Db::getInstance()->executeS($existingEmailSQL);
+        
+        if(!empty($existingEmails))
+        {
+            $removeEmailSQL = 'DELETE FROM ' . _DB_PREFIX_ . 'shoplync_customer_survey WHERE email_address LIKE "'.$emailAddr.'"';
+            Db::getInstance()->execute($removeEmailSQL);
+        }
+               
+        $updateEmailSqlQuery = 'UPDATE ' . _DB_PREFIX_ . 'shoplync_customer_survey SET email_address = "'.$emailAddr.'"'
+            .' WHERE sms_customer_id = '.$sms_cust_id;
+        
+        error_log('Email Updated: '.$updateEmailSqlQuery);        
+        if(Db::getInstance()->execute($updateEmailSqlQuery) == FALSE)
+        {
+            error_log('SQL Query Failed: '.$updateEmailSqlQuery);
+            return;
+        }   
+    }
+    protected static function ClearRating($sms_cust_id = '', $ps_cust_id = '', $email_addr = '')
+    {
+        $smsCustID = strlen($sms_cust_id) > 0 ? $sms_cust_id : '0';
+        $psCustID = strlen($ps_cust_id) > 0 ? $ps_cust_id : '0';
+        $emailAddr = strlen($email_addr) > 0 ? $email_addr : '';
+        
+        $clearRatingSqlQuery = 'UPDATE ' . _DB_PREFIX_ . 'shoplync_customer_survey SET rating = NULL'
+            .' WHERE sms_customer_id = '.$smsCustID.' OR ps_customer_id = '.$psCustID.' OR email_address LIKE "'.$emailAddr.'"';
+        
+        error_log('Rating Clear: '.$clearRatingSqlQuery);        
+        if(Db::getInstance()->execute($clearRatingSqlQuery) == FALSE)
+        {
+            error_log('SQL Query Failed: '.$clearRatingSqlQuery);
+            return;
+        }   
+    }
     protected static function AlreadyExists($sms_cust_id = '', $ps_cust_id = '', $email_addr = '')
     {
         $smsCustID = strlen($sms_cust_id) > 0 ? $sms_cust_id : '0';
@@ -282,6 +333,7 @@ class WebserviceSpecificManagementCustomerEmailUpload implements WebserviceSpeci
             $rowObj = self::MakeObjArray($row);
             //check if exists sms id / ps id or email
             //shoplync_customer_survey
+            $sendEmail = false;
             $duplicateEntries = self::AlreadyExists($rowObj['sms_customer_id'], $rowObj['ps_customer_id'], $rowObj['customer_email']);
             if(empty($duplicateEntries))
             {
@@ -294,13 +346,28 @@ class WebserviceSpecificManagementCustomerEmailUpload implements WebserviceSpeci
                 {
                     error_log('SQL Query Failed: '.$sqlInsert);
                     return;
-                }   
+                }
+                $sendEmail = true;                
+            }
+            else if(!empty($duplicateEntries) && $this->is_test_email)
+            {
+                //clear rating if exists
+                //email user no matter what
+                self::UpdateTestEmail($rowObj['sms_customer_id'], $rowObj['customer_email']);
+                self::ClearRating($rowObj['sms_customer_id'], $rowObj['ps_customer_id'], $rowObj['customer_email']);
+                $sendEmail = true;
+            }
+            else
+                error_log('Possible Duplicate');
+            
+            if($sendEmail && Configuration::get('SHOPLYNC_CUSTOMER_SURVEY_LIVE_MODE', false))
+            {
                 //if new send email with template use name/id/site ...etc
                 error_log('email_sent');
                 Shoplync_customer_survey::SendSurveyMail($rowObj['customer_name'], $rowObj['customer_email'], array(
                     '{firstname}' => $rowObj['customer_name'],
                     '{lastname}' => '',
-                    '{rating_url}' => $rowObj['website_link'].'/review/?sms-id='.$rowObj['sms_customer_id'].'&email='.$rowObj['customer_email'],
+                    '{rating_url}' => $rowObj['website_link'].'/review/?sms-id='.($this->is_test_email ? 'test' : $rowObj['sms_customer_id']).'&email='.$rowObj['customer_email'],
                     '{customer_shop_url}' => $rowObj['website_link'],
                 ));
             }

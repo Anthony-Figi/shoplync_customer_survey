@@ -10,7 +10,7 @@
                 <i class="em-4 material-icons rtl-no-flip done">{$top_icon nofilter}</i>
             </h1>
             <h1>{$title_str}</h1>
-            <h4 class="py-1">{$subtitle_str}</h4>
+            <h4 class="py-1">{$subtitle_str nofilter}</h4>
             {if !isset($g_link) && !isset($fb_link) && !isset($review_box)}
             <a href="{$link->getPageLink('contact', true)|escape:'html':'UTF-8'}" class="btn btn-primary">Contact Us</a>
             {/if}
