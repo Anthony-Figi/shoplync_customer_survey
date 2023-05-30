@@ -114,10 +114,16 @@ class shoplync_customer_surveyreviewModuleFrontController extends ModuleFrontCon
                         'We\'d love it if you took a minute to post an online review.');
                         
                         $google_review_link = Configuration::get('SHOPLYNC_CUSTOMER_SURVEY_G_REVIEW', '');
+                        $yelp_review_link = Configuration::get('SHOPLYNC_CUSTOMER_SURVEY_YELP_REVIEW', '');
                         $facebook_review_link = Configuration::get('SHOPLYNC_CUSTOMER_SURVEY_FB_REVIEW', '');
                         if(strlen($google_review_link) > 0)
                         {
                             $this->context->smarty->assign('g_link', $google_review_link);
+                        }
+                        
+                        if(strlen($yelp_review_link) > 0)
+                        {
+                            $this->context->smarty->assign('yelp_link', $yelp_review_link);
                         }
                         
                         if(strlen($facebook_review_link) > 0)
@@ -144,7 +150,7 @@ class shoplync_customer_surveyreviewModuleFrontController extends ModuleFrontCon
                 $this->context->smarty->assign('top_icon', $top_icon);
                 $this->context->smarty->assign('user_rating', $user_rating);
                 Media::addJsDef([
-                    'adminajax_link' => $this->context->link->getModuleLink('shoplync_customer_survey', 'feedback', array(), true),
+                    'cust_survey_adminajax_link' => $this->context->link->getModuleLink('shoplync_customer_survey', 'feedback', array(), true),
                     'sms_customer_id' => $sms_id,
                     'customer_email' => $user_email
                 ]);

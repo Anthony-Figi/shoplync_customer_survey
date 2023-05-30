@@ -1,0 +1,23 @@
+Hello {firstname} {lastname}
+
+ 
+
+We appreciate our customers feedback. Thank you!
+
+{$subtitle_str}
+
+{review_links}
+
+
+
+ 
+
+Shop {customer_shop_url} or Call 1-888-925-2252 to order
+
+ 
+
+Follow us on:
+
+Link Facebook Link Twitter Link Instagram
+
+© 2005-2022 Bayside Performance Inc. All Rights Reserved.

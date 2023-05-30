@@ -109,10 +109,20 @@ class Shoplync_customer_survey extends Module
         Configuration::updateValue('SHOPLYNC_CUSTOMER_SURVEY_TARGET_ORDER_STATUS', 5);
         Configuration::updateValue('SHOPLYNC_CUSTOMER_THRESHOLD', 2);
         Configuration::updateValue('SHOPLYNC_CUSTOMER_SURVEY_G_REVIEW', '');
+        Configuration::updateValue('SHOPLYNC_CUSTOMER_SURVEY_YELP_REVIEW', '');
         Configuration::updateValue('SHOPLYNC_CUSTOMER_SURVEY_FB_REVIEW', '');
-        Configuration::updateValue('SHOPLYNC_CUSTOMER_SURVEY_SUBTITLE_1', 'We\'d love it if you left us a positive review.');
+        
+        
+        
+        Configuration::updateValue('SHOPLYNC_CUSTOMER_SURVEY_MAINTITLE_1', 'Thank you for being a valued customer at Bayside Performance!');
+        Configuration::updateValue('SHOPLYNC_CUSTOMER_SURVEY_MAINTITLE_2', 'We Appreciate Your Feedback!.');
+        
+        Configuration::updateValue('SHOPLYNC_CUSTOMER_SURVEY_SUBTITLE_1', 'We\'d love it if you left us a positive online review. Click the link below.');
         Configuration::updateValue('SHOPLYNC_CUSTOMER_SURVEY_SUBTITLE_2', 'We appreciate your feedback, please let us know how we can improve.');
         Configuration::updateValue('SHOPLYNC_CUSTOMER_SURVEY_SUBTITLE_3', 'Please contact us if you have additional feedback or comments to share with us.');
+        
+        Configuration::updateValue('SHOPLYNC_CUSTOMER_SURVEY_EMAIL_SUBJECT_1', 'Bayside Performance Customer Feedback Survey');
+        Configuration::updateValue('SHOPLYNC_CUSTOMER_SURVEY_EMAIL_SUBJECT_2', 'Thank You For Your Feedback!');
 
         include(dirname(__FILE__).'/sql/install.php');
 
@@ -138,10 +148,15 @@ class Shoplync_customer_survey extends Module
         Configuration::deleteByName('SHOPLYNC_CUSTOMER_SURVEY_TARGET_ORDER_STATUS');
         Configuration::deleteByName('SHOPLYNC_CUSTOMER_THRESHOLD');
         Configuration::deleteByName('SHOPLYNC_CUSTOMER_SURVEY_G_REVIEW');
+        Configuration::deleteByName('SHOPLYNC_CUSTOMER_SURVEY_YELP_REVIEW');
         Configuration::deleteByName('SHOPLYNC_CUSTOMER_SURVEY_FB_REVIEW');
+        Configuration::deleteByName('SHOPLYNC_CUSTOMER_SURVEY_MAINTITLE_1');
+        Configuration::deleteByName('SHOPLYNC_CUSTOMER_SURVEY_MAINTITLE_2');
         Configuration::deleteByName('SHOPLYNC_CUSTOMER_SURVEY_SUBTITLE_1');
         Configuration::deleteByName('SHOPLYNC_CUSTOMER_SURVEY_SUBTITLE_2');
         Configuration::deleteByName('SHOPLYNC_CUSTOMER_SURVEY_SUBTITLE_3');
+        Configuration::deleteByName('SHOPLYNC_CUSTOMER_SURVEY_EMAIL_SUBJECT_1');
+        Configuration::deleteByName('SHOPLYNC_CUSTOMER_SURVEY_EMAIL_SUBJECT_2');
 
         return parent::uninstall();
     }
@@ -254,6 +269,115 @@ class Shoplync_customer_survey extends Module
         }
     }
     
+    public static function SetEmailOpened($sms_cust_id = '', $email_addr = '')
+    {
+        if(strlen($sms_cust_id) > 0 && strlen($email_addr) > 0)
+        {
+            $sqlQuery = 'SELECT * FROM `' . _DB_PREFIX_ . 'shoplync_customer_survey` WHERE (sms_customer_id = '.$sms_cust_id.' OR email_address LIKE "'.$email_addr.'") AND email_opened IS NULL';
+            $customers = Db::getInstance()->executeS($sqlQuery);
+             //error_log('email opened: '.print_r($customers, true));   
+            if(!empty($customers) && is_array($customers))
+            {
+                //error_log('email opened: '.print_r($customers, true));
+                $sqlSetRatingQuery = 'UPDATE `' . _DB_PREFIX_.'shoplync_customer_survey` SET email_opened = CURRENT_TIMESTAMP '
+                    .'WHERE (sms_customer_id = '.$sms_cust_id.' OR email_address LIKE "'.$email_addr.'") AND email_opened IS NULL';
+                    
+                return Db::getInstance()->execute($sqlSetRatingQuery);
+            }
+        }
+    }
+    
+    public static function ReviewLinkClicked($sms_cust_id = '', $email_addr = '')
+    {
+        if(strlen($sms_cust_id) > 0 && strlen($email_addr) > 0)
+        {
+            $sqlQuery = 'SELECT * FROM `' . _DB_PREFIX_ . 'shoplync_customer_survey` WHERE (sms_customer_id = '.$sms_cust_id.' OR email_address LIKE "'.$email_addr.'") AND review_link_clicked IS NULL';
+            $customers = Db::getInstance()->executeS($sqlQuery);
+                        
+            if(!empty($customers) && is_array($customers))
+            {
+                //error_log('return: '.print_r($customers, true));
+                $sqlSetRatingQuery = 'UPDATE `' . _DB_PREFIX_.'shoplync_customer_survey` SET review_link_clicked = CURRENT_TIMESTAMP '
+                    .'WHERE (sms_customer_id = '.$sms_cust_id.' OR email_address LIKE "'.$email_addr.'") AND review_link_clicked IS NULL';
+                    
+                return Db::getInstance()->execute($sqlSetRatingQuery);
+            }
+        }
+    }
+    
+    public static function ReminderSent($customer_survey_id = '')
+    {
+        if(isset($customer_survey_id) && strlen($customer_survey_id) > 0)
+        {
+            $sqlSetRatingQuery = 'UPDATE `' . _DB_PREFIX_.'shoplync_customer_survey` SET reminder_sent = TRUE '
+                .'WHERE customer_survey_id = '.$customer_survey_id;
+                
+            return Db::getInstance()->execute($sqlSetRatingQuery);
+        }
+        return false;
+    }
+    
+    public static function ResendReviewLinkReminder($testEmail = '')
+    {
+        //will look for all customers that gave a rating >= 4
+        //but have not clicked the review link
+        // will email follow up email 'thank you for your feedback! it would really help if you left us a review on google, click the link below
+        // create entry for reminder? to track if clicked?
+        $customersToRemindSQL = 'SELECT * FROM `' . _DB_PREFIX_ . 'shoplync_customer_survey` WHERE rating >= 4 AND review_link_clicked IS NULL AND reminder_sent = FALSE';
+        $customersToRemind = strlen($testEmail) > 0 ? 
+            array(array(
+                'customer_name' => 'Test Reminder',
+                'email_address' => $testEmail,
+                'website_link' => self::GetBaseURL(),
+            )) : Db::getInstance()->executeS($customersToRemindSQL);
+        
+        $review_links = array(
+            [Configuration::get('SHOPLYNC_CUSTOMER_SURVEY_G_REVIEW', ''), self::GetImgURL('icons/google-logo-rounded.png'), 'Review Us On Google'],
+            [Configuration::get('SHOPLYNC_CUSTOMER_SURVEY_YELP_REVIEW', ''), self::GetImgURL('icons/facebook-logo-rounded.png'), 'Review Us On Yelp'],
+            [Configuration::get('SHOPLYNC_CUSTOMER_SURVEY_FB_REVIEW', ''), self::GetImgURL('icons/yelp-logo-rounded.png'), 'Review Us On Facebook'],
+        );
+        
+        $review_link_html = '';
+        foreach($review_links as $row)
+        {
+            if(strlen($row[0]) > 0)
+            {
+                $review_link_html .= '<a href="'.$row[0].'" target="_blank"><img src="'.$row[1].'" width="20" height="20"/><span>'.$row[2].'</span></a>';
+            }
+        }
+        
+        $subtitle_str = Configuration::get('SHOPLYNC_CUSTOMER_SURVEY_SUBTITLE_1', 
+            'We\'d love it if you left us a positive online review. Click the link below.');
+            
+        if(strlen($review_link_html) > 0 || strlen($testEmail) > 0)
+        {
+            if(!empty($customersToRemind) && is_array($customersToRemind))
+            {
+                foreach($customersToRemind as $row)
+                {
+                    if(array_key_exists('customer_survey_id', $row))
+                    {
+                        Shoplync_customer_survey::ReminderSent($row['customer_survey_id']);
+                    }
+                    //error_log('sql row: '.print_r($row, true));
+                    Shoplync_customer_survey::SendSurveyMail(
+                    $row['customer_name'], 
+                    $row['email_address'], 
+                    array(
+                        '{firstname}' => $row['customer_name'],
+                        '{lastname}' => '',
+                        '{subtitle_str}' => $subtitle_str,
+                        '{review_links}' => $review_link_html,
+                        '{customer_shop_url}' => $row['website_link'],
+                        '{main_title}' => Configuration::get('SHOPLYNC_CUSTOMER_SURVEY_MAINTITLE_2', 'We Appreciate Your Feedback!')
+                    ),
+                    Configuration::get('SHOPLYNC_CUSTOMER_SURVEY_EMAIL_SUBJECT_2', 'Thank You For Your Feedback!'),
+                    'review_reminded');
+                }
+            }
+            
+        }
+    }
     /*
      * Queries the database for all the vehicle makes
      *
@@ -380,10 +504,45 @@ class Shoplync_customer_survey extends Module
                     ),
                     array(
                         'type' => 'text',
+                        'prefix' => '<i class="icon icon-yelp"></i>',
+                        'desc' => 'Enter Your Yelp Review Link',
+                        'name' => 'SHOPLYNC_CUSTOMER_SURVEY_YELP_REVIEW',
+                        'label' => 'Yelp Review Link',
+                    ),
+                    array(
+                        'type' => 'text',
                         'prefix' => '<i class="icon icon-facebook"></i>',
                         'desc' => 'Enter Your Facebook Review Link',
                         'name' => 'SHOPLYNC_CUSTOMER_SURVEY_FB_REVIEW',
                         'label' => 'Facebook Review Link',
+                    ),
+                    array(
+                        'type' => 'text',
+                        'prefix' => '<i class="icon icon-file-text"></i>',
+                        'desc' => 'Main titled displayed in the initial customer survey email',
+                        'name' => 'SHOPLYNC_CUSTOMER_SURVEY_MAINTITLE_1',
+                        'label' => 'Customer Survey Email - Main Title',
+                    ),
+                    array(
+                        'type' => 'text',
+                        'prefix' => '<i class="icon icon-comment-alt"></i>',
+                        'desc' => 'Email subject of the initial customer survey email',
+                        'name' => 'SHOPLYNC_CUSTOMER_SURVEY_EMAIL_SUBJECT_1',
+                        'label' => 'Customer Survey Email - Subject',
+                    ),
+                    array(
+                        'type' => 'text',
+                        'prefix' => '<i class="icon icon-file-text"></i>',
+                        'desc' => 'Main titled displayed in the give review reminder email',
+                        'name' => 'SHOPLYNC_CUSTOMER_SURVEY_MAINTITLE_2',
+                        'label' => 'Review Reminder Email - Main Title',
+                    ),
+                    array(
+                        'type' => 'text',
+                        'prefix' => '<i class="icon icon-comment-alt"></i>',
+                        'desc' => 'Email subject of the give review reminder email',
+                        'name' => 'SHOPLYNC_CUSTOMER_SURVEY_EMAIL_SUBJECT_2',
+                        'label' => 'Review Reminder Email - Subject',
                     ),
                     array(
                         'type' => 'text',
@@ -425,7 +584,15 @@ class Shoplync_customer_survey extends Module
             'SHOPLYNC_CUSTOMER_SURVEY_TARGET_ORDER_STATUS' => Configuration::get('SHOPLYNC_CUSTOMER_SURVEY_TARGET_ORDER_STATUS', 5),
             'SHOPLYNC_CUSTOMER_THRESHOLD' => Configuration::get('SHOPLYNC_CUSTOMER_THRESHOLD', 2),
             'SHOPLYNC_CUSTOMER_SURVEY_G_REVIEW' => Configuration::get('SHOPLYNC_CUSTOMER_SURVEY_G_REVIEW', ''),
+            'SHOPLYNC_CUSTOMER_SURVEY_YELP_REVIEW' => Configuration::get('SHOPLYNC_CUSTOMER_SURVEY_YELP_REVIEW', ''),
             'SHOPLYNC_CUSTOMER_SURVEY_FB_REVIEW' => Configuration::get('SHOPLYNC_CUSTOMER_SURVEY_FB_REVIEW', ''),
+            
+            'SHOPLYNC_CUSTOMER_SURVEY_MAINTITLE_1' => Configuration::get('SHOPLYNC_CUSTOMER_SURVEY_MAINTITLE_1', 'Thank you for being a valued customer at Bayside Performance!'),
+            'SHOPLYNC_CUSTOMER_SURVEY_EMAIL_SUBJECT_1' => Configuration::get('SHOPLYNC_CUSTOMER_SURVEY_EMAIL_SUBJECT_1', 'Bayside Performance Customer Feedback Survey'),
+            
+            'SHOPLYNC_CUSTOMER_SURVEY_MAINTITLE_2' => Configuration::get('SHOPLYNC_CUSTOMER_SURVEY_MAINTITLE_2', 'We Appreciate Your Feedback!.'),
+            'SHOPLYNC_CUSTOMER_SURVEY_EMAIL_SUBJECT_2' => Configuration::get('SHOPLYNC_CUSTOMER_SURVEY_EMAIL_SUBJECT_2', 'Thank You For Your Feedback!'),
+            
             'SHOPLYNC_CUSTOMER_SURVEY_SUBTITLE_1' => Configuration::get('SHOPLYNC_CUSTOMER_SURVEY_SUBTITLE_1', 'We\'d love it if you left us a positive review.'),
             'SHOPLYNC_CUSTOMER_SURVEY_SUBTITLE_2' => Configuration::get('SHOPLYNC_CUSTOMER_SURVEY_SUBTITLE_2', 'We appreciate your feedback, please let us know how we can improve.'),
             'SHOPLYNC_CUSTOMER_SURVEY_SUBTITLE_3' => Configuration::get('SHOPLYNC_CUSTOMER_SURVEY_SUBTITLE_3', 'Please contact us if you have additional feedback or comments to share with us.'),
@@ -499,7 +666,19 @@ class Shoplync_customer_survey extends Module
     {
         /* Place your code here. */
     }
-    
+    public static function GetImgURL($path = '')
+    {
+        return Tools::getShopDomainSsl(true). '/modules/shoplync_customer_survey/views/img/'.$path;
+    }
+    public static function GetBaseURL()
+    {
+        $link = _PS_BASE_URL_;
+        $link = str_replace('http://', '', $link);
+        $link = str_replace('https://', '', $link);
+        $link = rtrim($link, '/');
+        
+        return $link;
+    }
     public static function SendSurveyMail($toCustomerName, $toCustomerEmail, $additional_vars = [], $subject = 'Thank You For Your Purchase!', $survey_template = 'rate_us')
     {
         //_PS_MAIL_DIR_./en/rate_us.html
@@ -507,8 +686,11 @@ class Shoplync_customer_survey extends Module
         
         $default_vars = array(
             '{email}' => Configuration::get('PS_SHOP_EMAIL'), // sender email address
-            '{message}' => 'Hello world' // email content
+            '{message}' => 'Hello world', // email content
+            '{module_dir}' => self::GetImgURL(),
+            '{main_title}' => Configuration::get('SHOPLYNC_CUSTOMER_SURVEY_MAINTITLE_1', 'Thank you for being a valued customer'),
         );
+        
         
         $tpl_vars = empty($additional_vars) ? $default_vars : array_merge($default_vars, $additional_vars);
         Mail::Send(

@@ -29,6 +29,9 @@ class SurveyCustomer extends ObjectModel {
     /** @var datetime E-email sent date */ 
     public $email_sent;  
     
+    /** @var datetime E-email sent date */ 
+    public $email_opened;  
+    
     /** @var datetime Rating recieved date */ 
     public $rating_recieved; 
     
@@ -37,6 +40,11 @@ class SurveyCustomer extends ObjectModel {
     
     /** @var string The Customers Written Feedback*/ 
     public $feedback;
+ 
+    /** @var datetime E-email sent date */ 
+    public $review_link_clicked;  
+    /** @var datetime E-email sent date */ 
+    public $reminder_sent;  
  
     /**
      * Definition of class parameters
@@ -55,10 +63,13 @@ class SurveyCustomer extends ObjectModel {
             'website_link' => array('type' => self::TYPE_STRING), 
             
             'email_sent' => array('type' => self::TYPE_DATE), 
+            'email_opened' => array('type' => self::TYPE_DATE), 
             'rating_recieved' => array('type' => self::TYPE_DATE),
             
             'rating' => array('type' => self::TYPE_INT), 
             'feedback' => array('type' => self::TYPE_STRING), 
+            'review_link_clicked' => array('type' => self::TYPE_DATE),
+            'reminder_sent' => array('type' => self::TYPE_BOOL),
         ), 
     );
  

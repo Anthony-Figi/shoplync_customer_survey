@@ -37,7 +37,7 @@ function SubmitFeedback()
                 type: 'POST',
                 cache: false,
                 dataType: 'json',
-                url: adminajax_link, 
+                url: cust_survey_adminajax_link, 
                 data: {
                     ajax: true,
                     action: 'submitFeedback',//lowercase with action name
@@ -48,7 +48,7 @@ function SubmitFeedback()
                 success : function (data) {
                     if(data && data.success)
                     {
-                        console.log('Feedback Sumbitted');
+                        console.log('Feedback Submitted');
                         var feedbackRecievedBox = document.getElementById('feedback-received');
                         var inputedFunctions = document.getElementById('submit-inputs');
                         if(feedbackRecievedBox && inputedFunctions)
@@ -64,5 +64,41 @@ function SubmitFeedback()
                 }
             });
         }
+    }
+}
+
+function LinkClicked(linkClicked)
+{
+    if(linkClicked != null)
+    {
+        //do ajax, eitherway open link
+        if(sms_customer_id && customer_email)
+        {
+            $.ajax({
+                type: 'POST',
+                cache: false,
+                dataType: 'json',
+                url: cust_survey_adminajax_link, 
+                data: {
+                    ajax: true,
+                    action: 'linkClicked',//lowercase with action name
+                    smsID: sms_customer_id,
+                    email: customer_email
+                },
+                success : function (data) {
+                    if(data && data.success)
+                    {
+                        console.log('Linked Clicked Timestamp Updated');
+                    }
+                },
+                error : function (data){
+                    console.log('FAILED');
+                    console.log(data);
+                }
+            });
+        }
+    
+        var redirectURL = linkClicked.href;
+        window.open(redirectURL, '_blank').focus();
     }
 }

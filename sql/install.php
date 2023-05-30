@@ -23,6 +23,12 @@
 *  @license   http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
+
+$link = _PS_BASE_URL_;
+$link = str_replace('http://', '', $link);
+$link = str_replace('https://', '', $link);
+$link = rtrim($link, '/');
+
 $sql = array();
 
 /*$sql[0] = 'CREATE TABLE IF NOT EXISTS `' . _DB_PREFIX_ . 'shoplync_customer_survey` (
@@ -36,11 +42,14 @@ $sql[] = 'CREATE TABLE IF NOT EXISTS `' . _DB_PREFIX_ . 'shoplync_customer_surve
     `ps_customer_id` int(10) unsigned,
     `customer_name` varchar(255) NOT NULL,
     `email_address` varchar(255) NOT NULL,
-    `website_link` varchar(255) NOT NULL DEFAULT "www.baysideperformance.ca",
+    `website_link` varchar(255) NOT NULL DEFAULT "'. $link .'",
     `email_sent` datetime DEFAULT NULL,
+    `email_opened` datetime DEFAULT NULL,    
     `rating_recieved` datetime DEFAULT NULL,
     `rating` int(11) DEFAULT NULL,
     `feedback` varchar(255),
+    `review_link_clicked` datetime DEFAULT NULL,
+    `reminder_sent` bool DEFAULT FALSE NOT NULL,
     PRIMARY KEY  (`customer_survey_id`),
     UNIQUE KEY `unique_sms_customer_id` (sms_customer_id),
     UNIQUE KEY `unique_email_address` (email_address),

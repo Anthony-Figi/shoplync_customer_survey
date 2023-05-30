@@ -18,6 +18,8 @@
   <title>Message from {shop_name}</title>
   <!--[if !mso]><!-->
     <link href="https://fonts.googleapis.com/css?family=Roboto&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/brands.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/fontawesome.min.css" rel="stylesheet" />
     <style type="text/css">
 		@import url('https://fonts.googleapis.com/css?family=Roboto&display=swap');
     </style>
@@ -101,24 +103,30 @@ a[x-apple-data-detectors] {
   font-weight: inherit !important;
   line-height: inherit !important;
 }
-.ratingContainer a {
-    display:inline-block !important;
-    margin-left:5px !important;
-    text-align: center !important;
-    color: #fff!important;
-    text-decoration: none !important;
-    font-size: 1.2em !important;
-    font-weight: 600 !important;
-    margin-right: 10px !important;
-    /*background: url('https://static.baysideperformance.ca/images/star_70x70.png');*/
-    background: url('{module_dir}icons/star_70x70.png');
-    background-position: center !important;
-    background-repeat: no-repeat !important;
-    background-size: contain !important;
-    padding: 22px !important;
+
+.reviewBtnContainer a:hover  {
+    transform: scale(1.03)!important;
 }
-.ratingContainer a:hover {
-    transform: scale(1.2)!important;
+.reviewBtnContainer a {
+    margin:10px auto;
+    max-width:300px;
+    display:block;
+    padding:8px 16px;
+    border-radius:10px;
+    text-align:center;
+    background:#e31d27;
+    color:#fff!important;
+    text-decoration:none;
+    font-size:19px;
+    font-weight:600;
+    border:2px solid #141414;
+}
+.reviewBtnContainer a img,
+.reviewBtnContainer a span{
+    vertical-align: middle;
+}
+.reviewBtnContainer a img{
+    margin: 0 10px;
 }
 </style>
 </head>
@@ -152,18 +160,14 @@ a[x-apple-data-detectors] {
   <div class="hr" style="height:1px;border-bottom:2px solid #e31d27;clear: both;">&nbsp;</div>
   <br>
   <div class="subtitle" style="font-family:Roboto, sans-serif;font-size:16px;font-weight:600;color:#e31d27;text-align:center;"> 
-              {main_title}</div>
+              We Appreciate Your Feedback!</div>
   <br>
   <div class="body-text" style="font-family:Roboto, sans-serif;font-size:14px;line-height:20px;color:#333333;text-align:center;"> 
-              Please let us know how we are doing by rating your most recent experience with us below.</div>
+             {subtitle_str}</div>
   <br>
-<div class="ratingContainer" style="display:block;text-align:center;margin:1em;">
-    <a href="https://{rating_url}&rating=1" >1</a>
-    <a href="https://{rating_url}&rating=2" >2</a>
-    <a href="https://{rating_url}&rating=3" >3</a>
-    <a href="https://{rating_url}&rating=4" >4</a>
-    <a href="https://{rating_url}&rating=5" >5</a>
-</div>
+<p class="reviewBtnContainer" style="text-align:center;">
+    {review_links}
+</p>
   <br>
           </td>
         </tr>
@@ -190,7 +194,6 @@ a[x-apple-data-detectors] {
 			<br>
             &copy; 2005-2022 Bayside Performance Inc. All Rights Reserved.
             <br><br>
-            {tracking_img}
           </td>
 		
         </tr>

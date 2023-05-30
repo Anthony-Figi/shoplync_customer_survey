@@ -21,14 +21,47 @@ class shoplync_customer_surveyfeedbackModuleFrontController extends ModuleFrontC
      */
     public function postProcess()
     {
-        return parent::postProcess(); 
+        $val = Tools::getValue('action');
+        if($val == 'opened')
+        {
+            self::MailOpened();
+            die(' ');
+        }
+        else
+            return parent::postProcess(); 
     }
- 
 
+
+    public static function MailOpened() 
+    {
+        if((bool)Tools::isSubmit('sms-id') && (bool)Tools::isSubmit('email'))
+        {
+            $sms_id = (int)Tools::getValue('sms-id');
+            $user_email = Tools::getValue('email');
+            
+            //if not a valid user continue
+            if(Shoplync_customer_survey::isValidCustomer($sms_id, $user_email) && $sms_id > 0)
+            {
+                if(Shoplync_customer_survey::SetEmailOpened($sms_id, $user_email) === FALSE)
+                {
+                    error_log('Failed to set email opened');
+                }
+            }
+        }
+
+        header( 'Accept-Ranges: bytes');
+        header( 'Cache-Control: private, no-cache, no-store, max-age=0, must-revalidate, no-cache="Set-Cookie"' );
+        header( 'Connection: close' );
+        header( 'Content-Length: 96' );
+        header( 'Content-Type: image/png');
+        header( 'P3P: CP="CAO DSP TAIa OUR NOR UNI"');
+        header( 'Pragma: no-cache' );
+        echo base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAQMAAAAl21bKAAAAA1BMVEUAAACnej3aAAAAAXRSTlMAQObYZgAAAApJREFUCNdjYAAAAAIAAeIhvDMAAAAASUVORK5CYII=');
+    }
 
 /**
 * ====================================
-* Filter/Search Page
+* Save User Feedback
 * ====================================
 */ 
     /**
@@ -56,7 +89,7 @@ class shoplync_customer_surveyfeedbackModuleFrontController extends ModuleFrontC
     */
     public function displayAjaxSubmitFeedback()
     {
-        error_log('Fetching Vehicle details');
+        error_log('Saving User Feedback');
         if (Tools::isSubmit('smsID') && Tools::isSubmit('email') && Tools::isSubmit('feedbackComment'))
         {
             $sms_id = (int)Tools::getValue('smsID', 0);
@@ -80,4 +113,32 @@ class shoplync_customer_surveyfeedbackModuleFrontController extends ModuleFrontC
         else
             $this->setErrorHeaders('Failed To Save Feedback.');
     }    
+    /**
+    * Triggered via an AJAX call, unsets all the values stored in the cookie
+    */
+    public function displayAjaxLinkClicked()
+    {
+        error_log('Review Link Clicked');
+        if (Tools::isSubmit('smsID') && Tools::isSubmit('email'))
+        {
+            $sms_id = (int)Tools::getValue('smsID', 0);
+            $email = Tools::getValue('email', '');
+            
+            if($sms_id > 0 && strlen($email) > 0
+                && Shoplync_customer_survey::isValidCustomer($sms_id, $email))
+            {
+                $result = Shoplync_customer_survey::ReviewLinkClicked($sms_id, $email);
+                if($result === FALSE)
+                    $this->setErrorHeaders('Failed To Save Link Clicked.');
+                else
+                {
+                    $this->ajaxDie(json_encode([
+                        'success' => true,
+                    ]));
+                }
+            }
+        }
+        else
+            $this->setErrorHeaders('Failed To Set link Clicked.');
+    } 
 }

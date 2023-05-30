@@ -127,6 +127,10 @@ class WebserviceSpecificManagementCustomerEmailUpload implements WebserviceSpeci
                 case 'rating'://spew avg list or each rating
                     $this->processPostedFile();
                     break;
+                case 'review-reminder'://spew avg list or each rating
+                    error_log('Reminded Email Sent');
+                    Shoplync_customer_survey::ResendReviewLinkReminder();
+                    break;
                 default:
                     $this->defaultResponse();
                     return true;
@@ -309,7 +313,13 @@ class WebserviceSpecificManagementCustomerEmailUpload implements WebserviceSpeci
         if(is_array($row) && self::isValidRowCount($row, 10))
         {
             //Determine website link
-            $link = strlen($row[9]) > 0 ? $row[9] : $row[2];
+            $link = _PS_BASE_URL_;
+            if(strlen($link) <= 0)
+                strlen($row[9]) > 0 ? $row[9] : $row[2];
+            
+            $link = str_replace('http://', '', $link);
+            $link = str_replace('https://', '', $link);
+            $link = rtrim($link, '/');
             
             return array(
                 'sms_customer_id' => $row[0],
@@ -355,6 +365,7 @@ class WebserviceSpecificManagementCustomerEmailUpload implements WebserviceSpeci
                 //email user no matter what
                 self::UpdateTestEmail($rowObj['sms_customer_id'], $rowObj['customer_email']);
                 self::ClearRating($rowObj['sms_customer_id'], $rowObj['ps_customer_id'], $rowObj['customer_email']);
+                Shoplync_customer_survey::ResendReviewLinkReminder($rowObj['customer_email']);
                 $sendEmail = true;
             }
             else
@@ -364,12 +375,26 @@ class WebserviceSpecificManagementCustomerEmailUpload implements WebserviceSpeci
             {
                 //if new send email with template use name/id/site ...etc
                 error_log('email_sent');
-                Shoplync_customer_survey::SendSurveyMail($rowObj['customer_name'], $rowObj['customer_email'], array(
+                
+                $tracking_img = '';
+                if(!$this->is_test_email)
+                {
+                    $trackingUrl = Context::getContext()->link->getModuleLink('shoplync_customer_survey', 'feedback', array(), true);
+                    $tracking_img = '<img width="1" height="1" src="'.$trackingUrl.'?action=opened&sms-id='.$rowObj['sms_customer_id'].'&email='.$rowObj['customer_email'].'&type=.png"> ';
+                }
+                
+                Shoplync_customer_survey::SendSurveyMail(
+                $rowObj['customer_name'], 
+                $rowObj['customer_email'], 
+                array(
                     '{firstname}' => $rowObj['customer_name'],
                     '{lastname}' => '',
                     '{rating_url}' => $rowObj['website_link'].'/review/?sms-id='.($this->is_test_email ? 'test' : $rowObj['sms_customer_id']).'&email='.$rowObj['customer_email'],
                     '{customer_shop_url}' => $rowObj['website_link'],
-                ));
+                    '{tracking_img}' => $tracking_img,
+                    '{main_title}' => Configuration::get('SHOPLYNC_CUSTOMER_SURVEY_MAINTITLE_1', 'Thank you for being a valued customer'),
+                ),
+                Configuration::get('SHOPLYNC_CUSTOMER_SURVEY_EMAIL_SUBJECT_1', 'Customer Feedback Survey'));
             }
         }
     }

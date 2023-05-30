@@ -17,13 +17,19 @@
             <hr class="mx-3"/>
             <div id="submit-inputs" class="mx-auto py-1" style="width: 40%;">
                 {if isset($g_link)}
-                <a href="{$g_link}" class="d-block btn btn-primary mb-1" target="_blank">
+                <a href="{$g_link}" class="d-block btn btn-primary mb-1" target="_blank" onclick="LinkClicked(this);">
                     <i class="em-2-5 fa fa-google-plus-circle" style="margin-right: 5px;vertical-align: middle;"></i>
                     <span>Review Us On Google</span>
                 </a>
                 {/if}
+                {if isset($yelp_link)}
+                <a href="{$yelp_link}" class="d-block btn btn-primary mb-1" target="_blank" onclick="LinkClicked(this);>
+                    <i class="em-2-5 fa fa-yelp" style="margin-right: 5px;vertical-align: middle;"></i>
+                    <span>Review Us On Yelp</span>
+                </a>
+                {/if}
                 {if isset($fb_link)}
-                <a href="{$fb_link}" class="d-block btn btn-primary mb-1" target="_blank">
+                <a href="{$fb_link}" class="d-block btn btn-primary mb-1" target="_blank" onclick="LinkClicked(this);>
                     <i class="em-2-5 fa fa-facebook-square" style="margin-right: 5px;vertical-align: middle;"></i>
                     <span>Recommend Us On Facebook</span>
                 </a>
